@@ -38,6 +38,7 @@ class Ray(startX:Float,startY:Float,stopX:Float,stopY:Float):Line(startX, startY
         val d=(getStartX()-getStopX()).pow(2.0f)+(getStartY()-getStopY()).pow(2.0f).toDouble()
         return sqrt(d)
     }
+
     override fun draw(batch: Batch) {
         edge.set(getStopX(),getStopY())
         batch.draw(this)

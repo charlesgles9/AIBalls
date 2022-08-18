@@ -7,7 +7,7 @@ import com.graphics.glcanvas.engine.maths.Vector2f
 import com.graphics.glcanvas.engine.structures.Circle
 import com.graphics.glcanvas.engine.structures.Line
 
-class Ball(val originX:Float,originY:Float,radius:Float):Circle(originX,originY,radius),Update {
+class Ball(val originX:Float,val originY:Float,radius:Float):Circle(originX,originY,radius),Update {
 
     private val direction=Line(originX,originY,originX+radius,originY)
     private val velocity=Vector2f()
