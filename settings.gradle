@@ -1,2 +1,3 @@
+include ':GLCanvas'
 include ':app'
 rootProject.name = "AIBalls"
