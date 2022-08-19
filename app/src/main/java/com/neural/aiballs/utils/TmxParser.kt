@@ -24,7 +24,7 @@ class TmxParser(private val loader: TmxLoader) {
                             val pair=getAttributeXY()
                             val obj=TmxObject(pair.first,pair.second)
                             val group=data.peek()
-                            if(group.name=="checkPoint"){
+                            if(group.name=="checkpoint"){
                                 obj.width=getAttributeWidth()
                                 obj.height=getAttributeHeight()
                             }

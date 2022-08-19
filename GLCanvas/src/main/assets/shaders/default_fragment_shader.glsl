@@ -6,6 +6,7 @@ uniform sampler2D u_texture;
 uniform float isQuad;
 uniform float enableClipRect;
 uniform vec2 srcRes;
+uniform vec2 cameraPos;
 varying vec4 v_center;
 varying vec2 v_rounded_properties;
 varying vec4 v_trim;
@@ -28,7 +29,7 @@ float roundedEdge(vec2 pos,vec2 center,vec2 size,float radius,float thickness){
      t=t+step(thickness,0.0);
      r=r+step(radius,0.0);
 
-    return (t*r);
+    return  (t*r);
 }
 
 void main(){
@@ -36,8 +37,13 @@ void main(){
 // modify  coordinates to match screen space coordinates
   src.x=gl_FragCoord.x;
   src.y=srcRes.y-gl_FragCoord.y;
+  /*in case the camera is not at origin (0,0) for accuracies in the rounded
+  calculations
+  */
+  src+=cameraPos;
   // pixel position
   pos=v_center.xy;
+
   // quad dimensions
   size=v_center.zw;
   float radius=v_rounded_properties.y;
