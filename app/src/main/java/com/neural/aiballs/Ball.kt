@@ -11,13 +11,12 @@ import kotlin.math.sin
 
 class Ball(val originX:Float,val originY:Float,radius:Float):Circle(originX,originY,radius),Update {
      val direction=Line(originX,originY,originX+radius,originY)
-    val velocity=Vector2f()
-    val gravity=8f
-    var bounce=25f
-    val mass=0.99f
+    val velocity=Vector2f(5f,0f)
+    val gravity=2f
+    var bounce=5f
+    val mass=0.99999f
     val friction=0.99f
     var angle=0.0f
-
     init {
         direction.setColor(ColorRGBA.red)
     }
@@ -28,15 +27,15 @@ class Ball(val originX:Float,val originY:Float,radius:Float):Circle(originX,orig
 
     }
 
-
-
     override fun update(delta: Long) {
         direction.set(getX(),getY(),getX()+ getRadius()* cos(angle),getY()+getRadius()* sin(angle))
-        set(getX(),getY()+gravity)
+
+        set(getX()+(velocity.x+velocity.y)* cos(angle),getY()+gravity+velocity.y* sin(angle))
+        if(velocity.y<=0.01f)
+            velocity.y=0f
         velocity.y*=friction
-       bounce*=mass
 
-
+        bounce*=mass
 
     }
 }

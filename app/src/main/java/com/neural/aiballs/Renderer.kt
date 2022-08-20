@@ -5,9 +5,10 @@ import android.opengl.GLES32
 import com.graphics.glcanvas.engine.Batch
 import com.graphics.glcanvas.engine.Camera2D
 import com.graphics.glcanvas.engine.GLRendererView
-import com.graphics.glcanvas.engine.maths.ColorRGBA
-import com.graphics.glcanvas.engine.structures.Circle
+import com.graphics.glcanvas.engine.maths.Vector2f
+
 import com.graphics.glcanvas.engine.structures.PolyLine
+
 import com.neural.aiballs.algebra.Collision
 import com.neural.aiballs.utils.TmxLoader
 import com.neural.aiballs.utils.TmxParser
@@ -16,18 +17,14 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
    private val batch=Batch()
    private val camera=Camera2D(10f)
+   private val poly=PolyLine()
    private val ball=Ball(250f,500f,25f)
-   private val line4=Ray(100f,100f,100f,700f)
-   private val line3=Ray(width-50f,100f,width-150f,700f)
-   private val line2=Ray(0f,100f,width,200f)
-   private val line1=Ray(0f,700f,width,700f)
    private val close=Ray(10f,10f,10f,10f)
    private var tmxMap= TmxParser(TmxLoader("ballTrack.tmx",context))
-   private val poly=PolyLine()
+
     override fun prepare() {
       camera.setOrtho(getCanvasWidth(),getCanvasHeight())
       batch.initShader(context)
-      line1.setColor(ColorRGBA.red)
         //objectGroup
         tmxMap.data.forEach { group->
             //object
@@ -57,13 +54,25 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
                     //checkpoints.add(check)
 
                 }else if(group.name=="start"){
-                    camera.setPosition2D((obj.x)-getCanvasWidth()/2f,(obj.y-getCanvasHeight()/2f))
+                    camera.setPosition2D((obj.x),(obj.y))
                     ball.set(obj.x+ball.getRadius(),obj.y+ball.getRadius())
 
                 }
             }
 
         }
+
+        val cameraControl=CameraControl(object :CameraControl.OnSwipeListener{
+            override fun onSwipe(vector: Vector2f) {
+                camera.setPosition2D(camera.getX()+vector.x,
+                 camera.getY()+vector.y)
+            }
+        })
+
+
+        getController()?.addEvent(cameraControl)
+
+
     }
     private fun moveTo(x:Float,y:Float){
         poly.moveTo(x,y)
@@ -72,6 +81,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
     private fun lineTo(x:Float,y:Float){
         poly.lineTo(x,y)
     }
+
     override fun draw() {
      GLES32.glClear(GLES32.GL_DEPTH_BUFFER_BIT or GLES32.GL_COLOR_BUFFER_BIT)
      GLES32.glClearColor(0f,0f,0f,1f)
@@ -86,7 +96,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
     override fun update(delta: Long) {
 
-
+        for(i in 0 until 5) {
             ball.update(delta)
             poly.getPaths().forEach { path ->
                 path.getEndPoints().forEach { end ->
@@ -96,11 +106,8 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
                     )
                 }
             }
+       }
 
 
-        //Collision.circleToLineCollision(ball,line1,close)
-        //Collision.circleToLineCollision(ball,line2,close)
-        //Collision.circleToLineCollision(ball,line3,close)
-        //Collision.circleToLineCollision(ball,line4,close)
     }
 }

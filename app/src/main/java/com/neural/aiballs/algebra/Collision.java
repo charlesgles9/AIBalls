@@ -9,16 +9,24 @@ import com.neural.aiballs.Ray;
 public class Collision {
 
 
+
+
     public static boolean circleToLineCollision(Ball circle,float startx,float starty,float stopx,float stopy , Ray closest ){
+
+        float line1x=stopx-startx;
+        float line1y=stopy-starty;
+
+        float line2x=circle.getX()-startx;
+        float line2y=circle.getY()-starty;
         // get the length of the line
-        float length=(float)Math.sqrt(Math.pow(startx-stopx,2)+Math.pow(starty-stopy,2));
+        float length=(float)line1x*line1x+line1y*line1y;
+
         //get dot product of the line
-        float dot=(float)(((circle.getX()-startx)*(stopx-startx)+
-                (circle.getY()-starty)*(stopy-starty))/Math.pow(length,2));
+        float dot=Math.max(0f,Math.min(line1x*line2x+line1y*line2y,length))/length;
 
         //find the closes point on the line relative to the circle
-        float closestX=startx+dot*(stopx-startx);
-        float closestY=starty+dot*(stopy-starty);
+        float closestX=startx+dot*(line1x);
+        float closestY=starty+dot*(line1y);
 
         //closest distance to the center
         float dx=circle.getX()-closestX;
@@ -31,15 +39,18 @@ public class Collision {
             closest.set(circle.getX(),circle.getY(),closestX,closestY);
             circle.setAngle((float)Math.atan2(dy,dx));
             closest.setColor(ColorRGBA.Companion.getRed());
-            float displacement=(1.0f)-distance/circle.getRadius();
-            circle.set(circle.getX()+dx*displacement,circle.getY()+dy*displacement);
+            float displacement=(1.0f+0.01f)-distance/circle.getRadius();
+            circle.set(circle.getX()+(dx)*displacement,circle.getY()+(dy)*displacement);
             circle.getVelocity().set(0f,circle.getBounce());
 
         }else{
+
+
             closest.setColor(ColorRGBA.Companion.getGreen());
         }
         return collides;
     }
+
     public static boolean circleToLineCollision(Ball circle, Ray line, Ray closest ){
         //get dot product of the line
         float dot=(float)(((circle.getX()-line.getStartX())*(line.getStopX()-line.getStartX())+

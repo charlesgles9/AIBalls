@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.1" orientation="orthogonal" renderorder="right-down" compressionlevel="-1" width="30" height="80" tilewidth="50" tileheight="50" infinite="0" nextlayerid="5" nextobjectid="18">
+<map version="1.2" tiledversion="1.3.1" orientation="orthogonal" renderorder="right-down" compressionlevel="0" width="30" height="80" tilewidth="50" tileheight="50" infinite="0" nextlayerid="5" nextobjectid="18">
  <layer id="1" name="Tile Layer 1" width="30" height="80">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -85,7 +85,7 @@
 </data>
  </layer>
  <objectgroup id="2" name="platforms">
-  <object id="1" x="54.5455" y="3948.48">
+  <object id="1" x="60.6061" y="3936.36">
    <polygon points="0,27.2727 1396.97,21.2121 1400,-3909.09 -12.1212,-3906.06"/>
   </object>
   <object id="2" x="1251.52" y="3848.48">
@@ -120,7 +120,7 @@
   </object>
  </objectgroup>
  <objectgroup id="3" name="start">
-  <object id="13" x="239.394" y="3918.18">
+  <object id="13" x="1127.27" y="3215.15">
    <point/>
   </object>
  </objectgroup>
