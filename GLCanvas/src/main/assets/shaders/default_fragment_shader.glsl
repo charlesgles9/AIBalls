@@ -37,12 +37,13 @@ void main(){
 // modify  coordinates to match screen space coordinates
   src.x=gl_FragCoord.x;
   src.y=srcRes.y-gl_FragCoord.y;
-  /*in case the camera is not at origin (0,0) for accuracies in the rounded
-  calculations
-  */
-  src+=cameraPos;
-  // pixel position
-  pos=v_center.xy;
+
+
+
+   /* pixel position plus in case the camera is not at origin (0,0) for accuracies in the rounded
+    calculations since gl_FragCoord will always be in the range of the surfaceView
+    */
+  pos=v_center.xy-cameraPos;
 
   // quad dimensions
   size=v_center.zw;

@@ -8,6 +8,7 @@ import com.graphics.glcanvas.engine.GLRendererView
 import com.graphics.glcanvas.engine.maths.Vector2f
 
 import com.graphics.glcanvas.engine.structures.PolyLine
+import com.graphics.glcanvas.engine.utils.FpsCounter
 
 import com.neural.aiballs.algebra.Collision
 import com.neural.aiballs.utils.TmxLoader
@@ -18,10 +19,10 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private val batch=Batch()
    private val camera=Camera2D(10f)
    private val poly=PolyLine()
-   private val ball=Ball(250f,500f,25f,poly)
    private val close=Ray(10f,10f,10f,10f)
    private var tmxMap= TmxParser(TmxLoader("ballTrack.tmx",context))
-
+   private val population=50
+   private val balls= mutableListOf<Ball>()
     override fun prepare() {
       camera.setOrtho(getCanvasWidth(),getCanvasHeight())
       batch.initShader(context)
@@ -55,7 +56,10 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
                 }else if(group.name=="start"){
                     camera.setPosition2D((obj.x),(obj.y))
-                    ball.set(obj.x+ball.getRadius(),obj.y+ball.getRadius())
+                    val radius=25f
+                    for(i in 0 until  population) {
+                        balls.add(Ball(obj.x + radius, obj.y + radius, radius, poly))
+                    }
 
                 }
             }
@@ -86,28 +90,42 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
      GLES32.glClear(GLES32.GL_DEPTH_BUFFER_BIT or GLES32.GL_COLOR_BUFFER_BIT)
      GLES32.glClearColor(0f,0f,0f,1f)
         batch.begin(camera)
-        ball.draw(batch)
+        balls.forEach { ball->
+            ball.draw(batch)
+        }
         batch.draw(poly)
-        batch.draw(close)
         batch.end()
+
+
 
     }
 
 
     override fun update(delta: Long) {
 
-      // for(i in 0 until 5) {
-            ball.update(delta)
+        balls.forEach { ball->
+            ball.predictNextMove()
+        }
+       for(i in 0 until 1) {
+           balls.forEach { ball->
+               ball.update(delta)
+           }
+
             poly.getPaths().forEach { path ->
                 path.getEndPoints().forEach { end ->
-                    Collision.circleToLineCollision(
-                        ball, path.getStart().x, path.getStart().y,
-                        end.x, end.y, close
-                    )
+                    balls.forEach { ball ->
+                        Collision.circleToLineCollision(
+                            ball, path.getStart().x, path.getStart().y,
+                            end.x, end.y, close
+                        )
+                    }
+
                }
-         //  }
+           }
        }
 
-
+        balls.forEach { ball->
+            ball.velocity.y*=ball.friction
+        }
     }
 }
