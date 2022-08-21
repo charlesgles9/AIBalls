@@ -18,7 +18,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private val batch=Batch()
    private val camera=Camera2D(10f)
    private val poly=PolyLine()
-   private val ball=Ball(250f,500f,25f)
+   private val ball=Ball(250f,500f,25f,poly)
    private val close=Ray(10f,10f,10f,10f)
    private var tmxMap= TmxParser(TmxLoader("ballTrack.tmx",context))
 
@@ -96,7 +96,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
     override fun update(delta: Long) {
 
-        for(i in 0 until 5) {
+      // for(i in 0 until 5) {
             ball.update(delta)
             poly.getPaths().forEach { path ->
                 path.getEndPoints().forEach { end ->
@@ -104,8 +104,8 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
                         ball, path.getStart().x, path.getStart().y,
                         end.x, end.y, close
                     )
-                }
-            }
+               }
+         //  }
        }
 
 

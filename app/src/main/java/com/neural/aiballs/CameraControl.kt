@@ -37,11 +37,8 @@ class CameraControl(private val listener:OnSwipeListener):Touch {
                     listener.onSwipe(diff)
                     start.set(end)
                 }
-
             }
         }
-
-
         return touched
     }
 
