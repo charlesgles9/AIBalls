@@ -3,6 +3,7 @@ package com.neural.aiballs.algebra;
 import com.graphics.glcanvas.engine.maths.ColorRGBA;
 import com.graphics.glcanvas.engine.structures.Circle;
 
+import com.graphics.glcanvas.engine.structures.RectF;
 import com.neural.aiballs.Ball;
 import com.neural.aiballs.Ray;
 
@@ -11,6 +12,17 @@ import kotlin.Pair;
 public class Collision {
 
 
+
+    public static boolean quadToCircleCollision(Ball circle, RectF rect){
+        //get the distance between the two centers of the circle and the quad
+        float dx=circle.getX()-rect.getX();
+        float dy=circle.getY()-rect.getY();
+        // length between circle and the quad
+        float length=(float)Math.sqrt(dx*dx+dy*dy);
+        // half length of the perpendicular line in the quad
+        float p=(float)Math.sqrt(rect.getWidth()*rect.getWidth()+rect.getHeight()*rect.getHeight())*0.5f;
+        return length<=(circle.getRadius()+p);
+    }
 
     public static Pair<Float,Float> circleToLineDistance(Ball circle,float startx,float starty,float stopx,float stopy ){
         float line1x=stopx-startx;

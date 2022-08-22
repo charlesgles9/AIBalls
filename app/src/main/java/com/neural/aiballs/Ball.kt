@@ -7,6 +7,7 @@ import com.graphics.glcanvas.engine.maths.Vector2f
 import com.graphics.glcanvas.engine.structures.Circle
 import com.graphics.glcanvas.engine.structures.Line
 import com.graphics.glcanvas.engine.structures.PolyLine
+import com.graphics.glcanvas.engine.structures.RectF
 import com.neural.aiballs.ai.NeuralNetwork
 import com.neural.aiballs.algebra.Collision
 import kotlin.math.*
@@ -28,6 +29,7 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
     var angle=0.0f
     val input= mutableListOf<Double>()
     var network=NeuralNetwork(3+4,6,2)
+    val score= mutableListOf<RectF>()
     init {
         direction.setColor(ColorRGBA.red)
         lower.setColor(ColorRGBA.cyan)
@@ -40,6 +42,10 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
         }
     }
 
+
+    fun reset(){
+        set(originX,originY)
+    }
     override fun draw(batch: Batch) {
        batch.draw(this)
       // batch.draw(direction)
