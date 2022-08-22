@@ -5,14 +5,13 @@ import com.graphics.glcanvas.engine.Update
 import com.graphics.glcanvas.engine.maths.ColorRGBA
 import com.graphics.glcanvas.engine.maths.Vector2f
 import com.graphics.glcanvas.engine.structures.Circle
-import com.graphics.glcanvas.engine.structures.Line
 import com.graphics.glcanvas.engine.structures.PolyLine
 import com.graphics.glcanvas.engine.structures.RectF
 import com.neural.aiballs.ai.NeuralNetwork
 import com.neural.aiballs.algebra.Collision
 import kotlin.math.*
 
-class Ball(val originX: Float, val originY: Float, radius: Float, val poly: PolyLine):Circle(
+class Ball(val originX: Float, val originY: Float, radius: Float, val poly: PolyLine,private val checkpoints:MutableList<RectF>):Circle(
     originX,
     originY,
     radius
@@ -22,14 +21,17 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
     val lower=Ray(originX, originY, originX + radius, originY)
     val velocity=Vector2f(0f, 0f)
     //forward velocity
-    val fv=6f
+    val fv=7f
     val gravity=8f
     var bounce=14f
     val friction=0.99f
     var angle=0.0f
     val input= mutableListOf<Double>()
-    var network=NeuralNetwork(3+4,6,2)
+    //3-> raycasts to the nearest edges, 4 -> upper and lower direction distance, velocityX and Y
+    //2 -> x,y location of the nearest checkpoint
+    var network=NeuralNetwork(3+4+2,6,2)
     val score= mutableListOf<RectF>()
+    val passed= mutableListOf<RectF>()
     init {
         direction.setColor(ColorRGBA.red)
         lower.setColor(ColorRGBA.cyan)
@@ -45,6 +47,7 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
 
     fun reset(){
         set(originX,originY)
+        passed.clear()
     }
     override fun draw(batch: Batch) {
        batch.draw(this)
@@ -75,6 +78,18 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
     }
 
     fun predictNextMove(){
+
+        //calculate the distance to the nearest qua
+        var nearest=checkpoints[0]
+        var d=Float.MAX_VALUE
+        checkpoints.forEach { check->
+            val r=Collision.distanceToQuad(this,check)
+            if(d>r&&!passed.contains(check)){
+                d=r
+                nearest=check
+            }
+        }
+
         for (ray in vision){
             input.add(ray.getDistance())
         }
@@ -83,6 +98,8 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
         input.add(lower.getDistance())
         input.add(velocity.y.toDouble())
         input.add(velocity.x.toDouble())
+        input.add(nearest.getX().toDouble())
+        input.add(nearest.getY().toDouble())
         val output=network.predict(input)
 
         // move left or right
@@ -95,6 +112,7 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
 
         input.clear()
     }
+
 
     override fun update(delta: Long) {
         direction.set(getX(), getY(), getX() + 1000f * cos(angle), getY() + 1000f * sin(angle))
@@ -153,4 +171,5 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
 
 
     }
+
 }

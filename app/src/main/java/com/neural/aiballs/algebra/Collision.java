@@ -24,6 +24,14 @@ public class Collision {
         return length<=(circle.getRadius()+p);
     }
 
+    public static float distanceToQuad(Ball circle, RectF rect){
+        //get the distance between the two centers of the circle and the quad
+        float dx=circle.getX()-rect.getX();
+        float dy=circle.getY()-rect.getY();
+        // length between circle and the quad
+        return (float)Math.sqrt(dx*dx+dy*dy);
+    }
+
     public static Pair<Float,Float> circleToLineDistance(Ball circle,float startx,float starty,float stopx,float stopy ){
         float line1x=stopx-startx;
         float line1y=stopy-starty;

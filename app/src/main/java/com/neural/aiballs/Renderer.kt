@@ -14,6 +14,7 @@ import com.graphics.glcanvas.engine.structures.RectF
 import com.graphics.glcanvas.engine.ui.GLLabel
 import com.graphics.glcanvas.engine.ui.RelativeLayoutConstraint
 import com.graphics.glcanvas.engine.utils.FpsCounter
+import com.graphics.glcanvas.engine.utils.TextureLoader
 import com.neural.aiballs.ai.NeuralNetwork
 
 import com.neural.aiballs.algebra.Collision
@@ -38,6 +39,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private var font:Font?=null
    private var timerLabel:GLLabel?=null
    private val timerLayout=RelativeLayoutConstraint(null,250f,80f)
+   private val maxTime=30
     override fun prepare() {
       camera.setOrtho(getCanvasWidth(),getCanvasHeight())
       cameraUI.setOrtho(getCanvasWidth(),getCanvasHeight())
@@ -49,35 +51,39 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
             for(obj in group.getObjects()){
                 val offsetY = 50f
                 //polygons
-                if(group.name=="platforms") {
-                    for (poly in obj.polygons) {
-                        //points
-                        for (j in 0 until poly.points.size - 1) {
-                            val a = poly.points[j]
-                            val b = poly.points[j + 1]
+                when (group.name) {
+                    "platforms" -> {
+                        for (poly in obj.polygons) {
+                            //points
+                            for (j in 0 until poly.points.size - 1) {
+                                val a = poly.points[j]
+                                val b = poly.points[j + 1]
+                                moveTo(obj.x + a.first, obj.y + a.second + offsetY)
+                                lineTo(obj.x + b.first, obj.y + b.second + offsetY)
+
+                            }
+                            //join the last object with the first
+                            val a = poly.points[poly.points.size - 1]
+                            val b = poly.points[0]
                             moveTo(obj.x + a.first, obj.y + a.second + offsetY)
                             lineTo(obj.x + b.first, obj.y + b.second + offsetY)
 
                         }
-                        //join the last object with the first
-                        val a = poly.points[poly.points.size - 1]
-                        val b = poly.points[0]
-                        moveTo(obj.x + a.first, obj.y + a.second + offsetY)
-                        lineTo(obj.x + b.first, obj.y + b.second + offsetY)
+                    }
+                    "checkpoint" -> {
+                        val check=RectF(obj.x +obj.width*0.5f,obj.y +offsetY+obj.height*0.5f,obj.width,obj.height)
+                        //check.setTexture(checkPointTexture!!)
+                        checkpoints.add(check)
 
                     }
-                }else if(group.name=="checkpoint"){
-                    val check=RectF(obj.x +obj.width*0.5f,obj.y +offsetY+obj.height*0.5f,obj.width,obj.height)
-                    //check.setTexture(checkPointTexture!!)
-                    checkpoints.add(check)
+                    "start" -> {
+                        camera.setPosition2D((obj.x),(obj.y))
+                        val radius=25f
+                        for(i in 0 until  population) {
+                            balls.add(Ball(obj.x + radius, obj.y + radius, radius, poly,checkpoints))
+                        }
 
-                }else if(group.name=="start"){
-                    camera.setPosition2D((obj.x),(obj.y))
-                    val radius=25f
-                    for(i in 0 until  population) {
-                        balls.add(Ball(obj.x + radius, obj.y + radius, radius, poly))
                     }
-
                 }
             }
 
@@ -94,12 +100,14 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
         getController()?.addEvent(cameraControl)
 
             timerLabel=GLLabel(150f,50f,font!!,"Time Left:",0.2f)
+            timerLabel?.setTextColor(ColorRGBA.red)
             timerLayout.setBackgroundColor(ColorRGBA.transparent)
             timerLayout.addItem(timerLabel!!)
             timerLayout.set(getCanvasWidth()/2f,100f)
 
 
     }
+
     private fun moveTo(x:Float,y:Float){
         poly.moveTo(x,y)
     }
@@ -123,7 +131,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
         batch.end()
 
 
-
+      timerLabel?.setText("Time Left: "+(maxTime- timer.getTick()))
     }
 
 
@@ -137,7 +145,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
             val parent=balls[min(balls.size/2+Random.nextInt(balls.size/2),balls.size-1)]
             // create a child from the parent
             val child=Ball(parent.originX + parent.getRadius(),
-                parent.originY + parent.getRadius(), parent.getRadius(), poly)
+                parent.originY + parent.getRadius(), parent.getRadius(), poly,checkpoints)
             // copy the previous network data and apply a 1% mutation
             // no cross breeding
             child.network.copy(parent.network)
@@ -159,7 +167,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
     override fun update(delta: Long) {
 
-        if(timer.getTick()>=30) {
+        if(timer.getTick()>=maxTime) {
             timer.reset()
             geneticsAlgorithm()
         }
@@ -169,6 +177,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
             checkpoints.forEach {check->
                 if(Collision.quadToCircleCollision(ball,check)&&!ball.score.contains(check)){
                     ball.score.add(check)
+                    checkpoints.add(check)
                 }
             }
         }
@@ -196,5 +205,12 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
         }
 
         timer.update(delta)
+    }
+
+    override fun onRelease() {
+        super.onRelease()
+        //clean up resources
+        batch.cleanUp()
+        TextureLoader.getInstance().clearTextures()
     }
 }
