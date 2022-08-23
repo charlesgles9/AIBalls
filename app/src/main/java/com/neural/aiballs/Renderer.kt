@@ -31,7 +31,6 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private val camera=Camera2D(10f)
    private val checkpoints= mutableListOf<RectF>()
    private val blocks= mutableListOf<Block>()
-   private val close=Ray(10f,10f,10f,10f)
    private var tmxMap= TmxParser(TmxLoader("ballTrack.tmx",context))
    private val population=80
    private val balls= mutableListOf<Ball>()
@@ -39,7 +38,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private var font:Font?=null
    private var timerLabel:GLLabel?=null
    private val timerLayout=RelativeLayoutConstraint(null,250f,80f)
-   private val maxTime=30
+   private val maxTime=45
     override fun prepare() {
       camera.setOrtho(getCanvasWidth(),getCanvasHeight())
       cameraUI.setOrtho(getCanvasWidth(),getCanvasHeight())
@@ -106,9 +105,9 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
         blocks.forEach { block ->
           block.draw(batch)
         }
-        checkpoints.forEach {
+       /* checkpoints.forEach {
             batch.draw(it)
-        }
+        }*/
         batch.end()
 
         batch.begin(cameraUI)
@@ -134,7 +133,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
             // copy the previous network data and apply a 1% mutation
             // no cross breeding
             child.network.copy(parent.network)
-            NeuralNetwork.mutate(child.network,0.5f)
+            NeuralNetwork.mutate(child.network,0.1f)
             children.add(child)
         }
 
@@ -160,6 +159,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
             checkpoints.forEach { check->
                 if(Collision.quadToCircleCollision(ball,check)&&!ball.score.contains(check))
                     ball.score.add(check)
+
             }
 
         }
