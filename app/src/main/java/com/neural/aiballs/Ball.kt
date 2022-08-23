@@ -5,13 +5,13 @@ import com.graphics.glcanvas.engine.Update
 import com.graphics.glcanvas.engine.maths.ColorRGBA
 import com.graphics.glcanvas.engine.maths.Vector2f
 import com.graphics.glcanvas.engine.structures.Circle
-import com.graphics.glcanvas.engine.structures.PolyLine
 import com.graphics.glcanvas.engine.structures.RectF
 import com.neural.aiballs.ai.NeuralNetwork
 import com.neural.aiballs.algebra.Collision
 import kotlin.math.*
 
-class Ball(val originX: Float, val originY: Float, radius: Float, val poly: PolyLine,private val checkpoints:MutableList<RectF>):Circle(
+class Ball(val originX: Float, val originY: Float, radius: Float,
+           private val blocks:MutableList<Block>,private val checkpoints:MutableList<RectF>):Circle(
     originX,
     originY,
     radius
@@ -23,15 +23,17 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
     //forward velocity
     val fv=7f
     val gravity=8f
-    var bounce=14f
+    val momentum=15f
+    var bounce=12f
+    val mass=0.9f
     val friction=0.99f
     var angle=0.0f
     val input= mutableListOf<Double>()
     //3-> raycasts to the nearest edges, 4 -> upper and lower direction distance, velocityX and Y
-    //2 -> x,y location of the nearest checkpoint
     var network=NeuralNetwork(3+4+2,6,2)
     val score= mutableListOf<RectF>()
     val passed= mutableListOf<RectF>()
+    var hitFloor=false
     init {
         direction.setColor(ColorRGBA.red)
         lower.setColor(ColorRGBA.cyan)
@@ -51,9 +53,9 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
     }
     override fun draw(batch: Batch) {
        batch.draw(this)
-      // batch.draw(direction)
-     //  batch.draw(lower)
-       /*vision.forEach { ray->
+     /*  batch.draw(direction)
+       batch.draw(lower)
+       vision.forEach { ray->
            ray.draw(batch)
        }*/
 
@@ -77,37 +79,39 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
 
     }
 
-    fun predictNextMove(){
-
-        //calculate the distance to the nearest qua
-        var nearest=checkpoints[0]
-        var d=Float.MAX_VALUE
-        checkpoints.forEach { check->
-            val r=Collision.distanceToQuad(this,check)
-            if(d>r&&!passed.contains(check)){
-                d=r
-                nearest=check
-            }
-        }
-
+    private fun predictNextMove(){
         for (ray in vision){
             input.add(ray.getDistance())
         }
 
+        var nearest=checkpoints[0]
+
+        checkpoints.forEach { check->
+            if(Collision.distanceToQuad(this,nearest)>=Collision.distanceToQuad(this,check)&&
+                    !score.contains(check)){
+                nearest=check
+                nearest.setColor(ColorRGBA.red)
+            }
+
+        }
         input.add(direction.getDistance())
         input.add(lower.getDistance())
         input.add(velocity.y.toDouble())
         input.add(velocity.x.toDouble())
         input.add(nearest.getX().toDouble())
         input.add(nearest.getY().toDouble())
+
         val output=network.predict(input)
 
         // move left or right
-        velocity.x= fv*output[0].toFloat()*2f-fv
+        velocity.x= fv*output[0].toFloat()
+
 
         // jump
-        if(lower.getDistance()<=getRadius()){
-            velocity.y=bounce*output[1].toFloat()
+        if(hitFloor){
+            velocity.y=momentum*output[1].toFloat()
+            bounce=velocity.y
+            hitFloor=false
         }
 
         input.clear()
@@ -121,53 +125,41 @@ class Ball(val originX: Float, val originY: Float, radius: Float, val poly: Poly
         vision.forEach { ray->
             ray.project(1000f,getX(),getY())
         }
-        // get the closest distance from the ball to the an edge
-        poly.getPaths().forEach { path ->
-            path.getEndPoints().forEach { end ->
 
-                val d1=Collision.circleToLineDistance(
-                    this, path.getStart().x, path.getStart().y,
-                    end.x, end.y
-                )
-                //closest distance to the center
-                val dx1 = getX() - d1.first
-                val dy1 = getY() - d1.second
+        var dx=(velocity.y)* cos(angle)
+        var dy=((velocity.y)* sin(angle))
+        var g=gravity
+        var vx=velocity.x
+        for(block in blocks){
 
-                val distance1 = sqrt(dx1.toDouble().pow(2.0) + dy1.toDouble().pow(2.0))
-                        .toFloat()
-                if(distance1<far){
-                     far=distance1
-                    direction.setStopX(d1.first)
-                    direction.setStopY(d1.second)
-                }
+            for (line in block.lines){
+                castRaysCollision(vision[0],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
+                castRaysCollision(vision[1],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
+                castRaysCollision(vision[2],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
+                castRaysCollision(direction,line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
+                castRaysCollision(lower,line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
+            }
 
-              val d2=  Collision.detect_line_collision(lower.getStartX(),lower.getStartY()
-                    ,lower.getStopX(),lower.getStopY(),path.getStart().x, path.getStart().y,
-                    end.x, end.y)
-
-               if(Collision.do_lines_intersect(d2)){
-                   Collision.setInterSectionPoint(d2,lower)
-               }
-
-                castRaysCollision(vision[0],path.getStart().x, path.getStart().y, end.x, end.y)
-                castRaysCollision(vision[1],path.getStart().x, path.getStart().y, end.x, end.y)
-                castRaysCollision(vision[2],path.getStart().x, path.getStart().y, end.x, end.y)
-
+            //test collision
+            if(block.collidesWith(this,dx,dy)){
+                dx=0f
+                dy=0f
+            }
+            if(block.collidesWith(this,vx,0f)){
+                vx=0f
+            }
+            if(block.collidesWith(this,0f,g)){
+                g=0f
             }
         }
 
-
-        val dx=velocity.x+(velocity.y)* cos(angle)
-        val dy=(gravity+(velocity.y)* sin(angle))
-
         set(
-            getX() + dx,
-            getY() + dy
+            getX() + dx+vx,
+            getY() + dy+g
         )
 
         if(velocity.y<=0.01f) velocity.y=0f
-
-
+        predictNextMove()
 
 
     }

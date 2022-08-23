@@ -3,6 +3,7 @@ package com.neural.aiballs.algebra;
 import com.graphics.glcanvas.engine.maths.ColorRGBA;
 import com.graphics.glcanvas.engine.structures.Circle;
 
+import com.graphics.glcanvas.engine.structures.Line;
 import com.graphics.glcanvas.engine.structures.RectF;
 import com.neural.aiballs.Ball;
 import com.neural.aiballs.Ray;
@@ -15,13 +16,31 @@ public class Collision {
 
     public static boolean quadToCircleCollision(Ball circle, RectF rect){
         //get the distance between the two centers of the circle and the quad
-        float dx=circle.getX()-rect.getX();
-        float dy=circle.getY()-rect.getY();
+        float dx=Math.abs(circle.getX()-rect.getX())-rect.getWidth()*0.5f;
+        float dy=Math.abs(circle.getY()-rect.getY())-rect.getHeight()*0.5f;
+
+        if(dx>circle.getRadius()||dy>circle.getRadius()) return false;
+        if(dx<=0||dy<=0) return  true;
         // length between circle and the quad
         float length=(float)Math.sqrt(dx*dx+dy*dy);
-        // half length of the perpendicular line in the quad
-        float p=(float)Math.sqrt(rect.getWidth()*rect.getWidth()+rect.getHeight()*rect.getHeight())*0.5f;
-        return length<=(circle.getRadius()+p);
+
+        return length<=(circle.getRadius());
+    }
+
+    // test if the next step is safe
+    public static boolean quadToCircleCollision(Ball circle, RectF rect,float displacementX,float displacementY){
+
+
+        //get the distance between the two centers of the circle and the quad
+        float dx=Math.abs(circle.getX()+displacementX-rect.getX())-rect.getWidth()*0.5f;
+        float dy=Math.abs(circle.getY()+displacementY-rect.getY())-rect.getHeight()*0.5f;
+
+        if(dx>circle.getRadius()||dy>circle.getRadius()) return false;
+        if(dx<=0||dy<=0) return  true;
+        // length between circle and the quad
+        float length=(float)Math.sqrt(dx*dx+dy*dy);
+
+        return length<=(circle.getRadius());
     }
 
     public static float distanceToQuad(Ball circle, RectF rect){
@@ -51,13 +70,13 @@ public class Collision {
     }
 
 
-    public static boolean circleToLineCollision(Ball circle,float startx,float starty,float stopx,float stopy , Ray closest ){
+    public static boolean circleToLineCollision(Ball circle,float startx,float starty,float stopx,float stopy ,float displacementX,float displacementY, Ray closest ){
 
         float line1x=stopx-startx;
         float line1y=stopy-starty;
 
-        float line2x=circle.getX()-startx;
-        float line2y=circle.getY()-starty;
+        float line2x=circle.getX()+displacementX-startx;
+        float line2y=circle.getY()+displacementY-starty;
         // get the length of the line
         float length=(float)line1x*line1x+line1y*line1y;
 
@@ -69,19 +88,19 @@ public class Collision {
         float closestY=starty+dot*(line1y);
 
         //closest distance to the center
-        float dx=circle.getX()-closestX;
-        float dy=circle.getY()-closestY;
+        float dx=circle.getX()+displacementX-closestX;
+        float dy=circle.getY()+displacementY-closestY;
 
         float distance=(float) (Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2)));
 
         boolean collides=distance<=(circle.getRadius());
         if(collides){
             closest.set(circle.getX(),circle.getY(),closestX,closestY);
-            circle.setAngle((float)(Math.atan2(dy,dx)-Math.toRadians(circle.getRotationZ())));
+            circle.setAngle((float)(Math.atan2(dy,dx)));
             closest.setColor(ColorRGBA.Companion.getRed());
-            float displacement=(1.0f+0.01f)-distance/circle.getRadius();
-            circle.set(circle.getX()+(dx)*displacement,circle.getY()+(dy)*displacement);
-            circle.getVelocity().set(circle.getVelocity().getX(),circle.getBounce());
+           // float displacement=(1.0f+0.01f)-distance/circle.getRadius();
+           // circle.set(circle.getX()+(dx)*displacement,circle.getY()+(dy)*displacement);
+            circle.getVelocity().set(circle.getVelocity().getX(),circle.getGravity());
 
         }else{
 
@@ -106,6 +125,11 @@ public class Collision {
         }
 
         return ua;
+    }
+
+    public static boolean do_lines_intersect(Line a,Line b){
+        return do_lines_intersect(detect_line_collision(a.getStartX(), a.getStartY(), a.getStopX(), a.getStopY(),
+                b.getStartX(), b.getStartY(), b.getStopX(), b.getStopY()));
     }
 
     public static boolean do_lines_intersect(float startAx,float startAy,float stopAx,float stopAy,

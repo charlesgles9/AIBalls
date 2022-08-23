@@ -29,11 +29,11 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private val batch=Batch()
    private val cameraUI=Camera2D(10f)
    private val camera=Camera2D(10f)
-   private val poly=PolyLine()
    private val checkpoints= mutableListOf<RectF>()
+   private val blocks= mutableListOf<Block>()
    private val close=Ray(10f,10f,10f,10f)
    private var tmxMap= TmxParser(TmxLoader("ballTrack.tmx",context))
-   private val population=1
+   private val population=80
    private val balls= mutableListOf<Ball>()
    private val timer=Timer(1000L)
    private var font:Font?=null
@@ -52,25 +52,12 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
                 val offsetY = 50f
                 //polygons
                 when (group.name) {
-                    "platforms" -> {
-                        for (poly in obj.polygons) {
-                            //points
-                            for (j in 0 until poly.points.size - 1) {
-                                val a = poly.points[j]
-                                val b = poly.points[j + 1]
-                                moveTo(obj.x + a.first, obj.y + a.second + offsetY)
-                                lineTo(obj.x + b.first, obj.y + b.second + offsetY)
-
-                            }
-                            //join the last object with the first
-                            val a = poly.points[poly.points.size - 1]
-                            val b = poly.points[0]
-                            moveTo(obj.x + a.first, obj.y + a.second + offsetY)
-                            lineTo(obj.x + b.first, obj.y + b.second + offsetY)
-
-                        }
+                    "blocks" -> {
+                        val block=Block(obj.x +obj.width*0.5f,obj.y +offsetY+obj.height*0.5f,obj.width,obj.height)
+                        //check.setTexture(checkPointTexture!!)
+                        blocks.add(block)
                     }
-                    "checkpoint" -> {
+                    "checkpoints" -> {
                         val check=RectF(obj.x +obj.width*0.5f,obj.y +offsetY+obj.height*0.5f,obj.width,obj.height)
                         //check.setTexture(checkPointTexture!!)
                         checkpoints.add(check)
@@ -80,7 +67,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
                         camera.setPosition2D((obj.x),(obj.y))
                         val radius=25f
                         for(i in 0 until  population) {
-                            balls.add(Ball(obj.x + radius, obj.y + radius, radius, poly,checkpoints))
+                            balls.add(Ball(obj.x + radius, obj.y + radius, radius,blocks,checkpoints))
                         }
 
                     }
@@ -108,13 +95,6 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
     }
 
-    private fun moveTo(x:Float,y:Float){
-        poly.moveTo(x,y)
-    }
-
-    private fun lineTo(x:Float,y:Float){
-        poly.lineTo(x,y)
-    }
 
     override fun draw() {
      GLES32.glClear(GLES32.GL_DEPTH_BUFFER_BIT or GLES32.GL_COLOR_BUFFER_BIT)
@@ -123,7 +103,12 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
         balls.forEach { ball->
             ball.draw(batch)
         }
-        batch.draw(poly)
+        blocks.forEach { block ->
+          block.draw(batch)
+        }
+        checkpoints.forEach {
+            batch.draw(it)
+        }
         batch.end()
 
         batch.begin(cameraUI)
@@ -145,11 +130,11 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
             val parent=balls[min(balls.size/2+Random.nextInt(balls.size/2),balls.size-1)]
             // create a child from the parent
             val child=Ball(parent.originX + parent.getRadius(),
-                parent.originY + parent.getRadius(), parent.getRadius(), poly,checkpoints)
+                parent.originY + parent.getRadius(), parent.getRadius(),blocks,checkpoints)
             // copy the previous network data and apply a 1% mutation
             // no cross breeding
             child.network.copy(parent.network)
-            NeuralNetwork.mutate(child.network,0.1f)
+            NeuralNetwork.mutate(child.network,0.5f)
             children.add(child)
         }
 
@@ -162,48 +147,31 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
         for (i in 0 until  balls.size){
             balls[i].reset()
         }
-        children.clear()
+
     }
 
     override fun update(delta: Long) {
 
+
+        balls.forEach { ball ->
+
+             ball.update(delta)
+
+            checkpoints.forEach { check->
+                if(Collision.quadToCircleCollision(ball,check)&&!ball.score.contains(check))
+                    ball.score.add(check)
+            }
+
+        }
         if(timer.getTick()>=maxTime) {
             timer.reset()
             geneticsAlgorithm()
         }
 
         balls.forEach { ball->
-            ball.predictNextMove()
-            checkpoints.forEach {check->
-                if(Collision.quadToCircleCollision(ball,check)&&!ball.score.contains(check)){
-                    ball.score.add(check)
-                    checkpoints.add(check)
-                }
-            }
-        }
-
-       for(i in 0 until 1) {
-           balls.forEach { ball->
-               ball.update(delta)
-           }
-
-            poly.getPaths().forEach { path ->
-                path.getEndPoints().forEach { end ->
-                    balls.forEach { ball ->
-                        Collision.circleToLineCollision(
-                            ball, path.getStart().x, path.getStart().y,
-                            end.x, end.y, close
-                        )
-                    }
-
-               }
-           }
-       }
-
-        balls.forEach { ball->
             ball.velocity.y*=ball.friction
+            ball.bounce*=ball.mass
         }
-
         timer.update(delta)
     }
 
