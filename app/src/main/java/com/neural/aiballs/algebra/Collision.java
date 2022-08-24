@@ -100,7 +100,7 @@ public class Collision {
             closest.setColor(ColorRGBA.Companion.getRed());
             float displacement=(1.0f)-distance/circle.getRadius();
             circle.set(circle.getX()+(dx)*displacement,circle.getY()+(dy)*displacement);
-            circle.getVelocity().set(circle.getVelocity().getX(),circle.getVelocity().getY()*0.5f);
+            circle.getVelocity().set(circle.getVelocity().getX(),circle.getVelocity().getY());
 
         }else{
 

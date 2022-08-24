@@ -4,6 +4,7 @@ import com.graphics.glcanvas.engine.Batch
 import com.graphics.glcanvas.engine.Update
 import com.graphics.glcanvas.engine.structures.RectF
 import com.neural.aiballs.algebra.Collision
+import kotlin.math.atan2
 
 class Block(x:Float,y:Float,width:Float,height:Float):RectF(x,y,width, height),Update {
 
@@ -43,7 +44,7 @@ class Block(x:Float,y:Float,width:Float,height:Float):RectF(x,y,width, height),U
             quad center position
              */
             for (ray in lines) {
-                Collision.circleToLineCollision(
+                if(Collision.circleToLineCollision(
                     ball,
                     ray.getStartX(),
                     ray.getStartY(),
@@ -52,9 +53,15 @@ class Block(x:Float,y:Float,width:Float,height:Float):RectF(x,y,width, height),U
                     displacementX,
                     displacementY,
                     ball.direction
-                )
+
+                )&&
+                    // make sure it is the top ray
+                    ray==lines[0]) {
+                    ball.hitFloor = true
+                }
+
             }
-            ball.hitFloor=true
+
 
             return true
         }

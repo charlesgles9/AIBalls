@@ -3,6 +3,7 @@ package com.neural.aiballs
 import android.content.Context
 import android.opengl.GLES32
 import com.graphics.glcanvas.engine.Batch
+import com.graphics.glcanvas.engine.BatchQueue
 import com.graphics.glcanvas.engine.Camera2D
 import com.graphics.glcanvas.engine.GLRendererView
 import com.graphics.glcanvas.engine.maths.ColorRGBA
@@ -32,7 +33,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private val checkpoints= mutableListOf<RectF>()
    private val blocks= mutableListOf<Block>()
    private var tmxMap= TmxParser(TmxLoader("ballTrack.tmx",context))
-   private val population=80
+   private val population=100
    private val balls= mutableListOf<Ball>()
    private val timer=Timer(1000L)
    private var font:Font?=null
@@ -98,6 +99,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
     override fun draw() {
      GLES32.glClear(GLES32.GL_DEPTH_BUFFER_BIT or GLES32.GL_COLOR_BUFFER_BIT)
      GLES32.glClearColor(0f,0f,0f,1f)
+        batch.setMode(BatchQueue.UNORDER)
         batch.begin(camera)
         balls.forEach { ball->
             ball.draw(batch)
@@ -173,6 +175,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
             ball.bounce*=ball.mass
         }
         timer.update(delta)
+
     }
 
     override fun onRelease() {

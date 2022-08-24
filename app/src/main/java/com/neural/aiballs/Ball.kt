@@ -23,14 +23,14 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
     //forward velocity
     val fv=7f
     val gravity=8f
-    val momentum=15f
+    val momentum=17f
     var bounce=12f
-    val mass=0.9f
+    val mass=0.92f
     val friction=0.99f
     var angle=0.0f
-    val input= mutableListOf<Double>()
+    private val input= mutableListOf<Double>()
     //3-> raycasts to the nearest edges, 4 -> upper and lower direction distance, velocityX and Y
-    var network=NeuralNetwork(5+11,4,2)
+    var network=NeuralNetwork(3+7,4,2)
     val score= mutableListOf<RectF>()
     val passed= mutableListOf<RectF>()
     var hitFloor=false
@@ -41,10 +41,11 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
     private var dy=0f
     // the right wall of which a ray collided with
     private var rightWallHeight=0f
+
     init {
         direction.setColor(ColorRGBA.red)
         lower.setColor(ColorRGBA.cyan)
-        val angles= floatArrayOf(180f,60f,90f,-90f,-60f)
+        val angles= floatArrayOf(180f,60f,30f,90f,-90f,-60f,-30f)
         for ( angle in angles){
             val ray=Ray(getX(),getY(),getX(),getY())
                 ray.angle=angle
@@ -83,13 +84,12 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
             stopy)
        if (Collision.do_lines_intersect(v)) {
            Collision.setInterSectionPoint(v,ray)
+           // get height if it's an edge of 90 degrees
+           if(ray.angle==90f){
+             val d=  sqrt((startx-stopx).pow(2.0f)+(starty-stopy).pow(2.0f).toDouble())
+               rightWallHeight=d.toFloat()-getRadius()
+           }
        }
-
-       // get height if it's an edge of 90 degrees
-       if(ray.angle==90f){
-           rightWallHeight=ray.getDistance().toFloat()
-       }
-
 
     }
 
@@ -99,9 +99,7 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
         }
 
         var nearest=checkpoints[0]
-
         for(check in checkpoints){
-
             if(Collision.distanceToQuad(this,nearest)>=Collision.distanceToQuad(this,check)&&
                     !passed.contains(check)){
                 nearest=check
@@ -109,56 +107,50 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
 
             }
         }
-        input.add(direction.getStopX().toDouble())
-        input.add(direction.getStopY().toDouble())
+        input.add(direction.getDistance())
         input.add(lower.getDistance())
-        input.add(dy.toDouble())
         input.add(dx.toDouble())
-        input.add(g.toDouble())
-        input.add(rightWallHeight.toDouble())
+        input.add(dy.toDouble())
+        input.add(rightWallHeight.toDouble()+getRadius())
         input.add(nearest.getX().toDouble())
         input.add(nearest.getY().toDouble())
-        input.add(nearest.getWidth().toDouble())
-        input.add(nearest.getHeight().toDouble())
-
         val output=network.predict(input)
-
         // move left or right
-        velocity.x=fv- fv*output[0].toFloat()*2f
-
-
+        velocity.x=fv-fv*output[0].toFloat()*2f
         // jump
         if(hitFloor){
             velocity.y=momentum*output[1].toFloat()
             bounce=velocity.y
             hitFloor=false
-        }
 
+        }
         input.clear()
     }
 
 
     override fun update(delta: Long) {
-        direction.set(getX(), getY(), getX() + 1000f * cos(angle), getY() + 1000f * sin(angle))
-        lower.set(getX(), getY(), getX(), getY() + 1000f)
-        var far=1000f
+        val far=1000f
+        direction.set(getX(), getY(), getX() + far * cos(angle), getY() + far * sin(angle))
+        lower.set(getX(), getY(), getX(), getY() + far)
         vision.forEach { ray->
-            ray.project(1000f,getX(),getY())
+            ray.project(far,getX(),getY())
         }
 
          dx=(velocity.y)* cos(angle)
          dy=((velocity.y)* sin(angle))
          g=gravity
-        var vx=velocity.x
+         var vx=velocity.x
         for(block in blocks){
-
+            //cast the rays to the nearest edges
+           if(abs(block.getX()-getX()) <300|| abs(block.getY()-getY())<300)
             for (line in block.lines){
                 castRaysCollision(vision[0],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[1],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[2],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[3],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[4],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
-
+                castRaysCollision(vision[5],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
+                castRaysCollision(vision[6],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(direction,line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(lower,line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
             }
