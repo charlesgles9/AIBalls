@@ -33,13 +33,15 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
    private val checkpoints= mutableListOf<RectF>()
    private val blocks= mutableListOf<Block>()
    private var tmxMap= TmxParser(TmxLoader("ballTrack.tmx",context))
-   private val population=100
+   private val population=60
    private val balls= mutableListOf<Ball>()
    private val timer=Timer(1000L)
    private var font:Font?=null
    private var timerLabel:GLLabel?=null
-   private val timerLayout=RelativeLayoutConstraint(null,250f,80f)
+   private var generationLabel:GLLabel?=null
+   private val timerLayout=RelativeLayoutConstraint(null,550f,80f)
    private val maxTime=45
+    private var generation=1
     override fun prepare() {
       camera.setOrtho(getCanvasWidth(),getCanvasHeight())
       cameraUI.setOrtho(getCanvasWidth(),getCanvasHeight())
@@ -86,11 +88,16 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
         getController()?.addEvent(cameraControl)
 
-            timerLabel=GLLabel(150f,50f,font!!,"Time Left:",0.2f)
+            timerLabel=GLLabel(250f,50f,font!!,"Time Left:",0.35f)
+            generationLabel=GLLabel(150f,50f,font!!,"Gen:1",0.35f)
             timerLabel?.setTextColor(ColorRGBA.red)
+            generationLabel?.setTextColor(ColorRGBA.green)
+            generationLabel?.getConstraints()?.toRightOf(timerLabel!!)
             timerLayout.setBackgroundColor(ColorRGBA.transparent)
             timerLayout.addItem(timerLabel!!)
+            timerLayout.addItem(generationLabel!!)
             timerLayout.set(getCanvasWidth()/2f,100f)
+
 
 
     }
@@ -118,17 +125,32 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
 
       timerLabel?.setText("Time Left: "+(maxTime- timer.getTick()))
+
     }
 
 
     private fun geneticsAlgorithm(){
-
+        generation++
         balls.sortBy { it.score.size }
         val children= mutableListOf<Ball>()
         // create children from the previous population
         for(i in 0 until balls.size/2){
             // pick a random parent
             val parent=balls[min(balls.size/2+Random.nextInt(balls.size/2),balls.size-1)]
+            // create a child from the parent
+            val child=Ball(parent.originX + parent.getRadius(),
+                parent.originY + parent.getRadius(), parent.getRadius(),blocks,checkpoints)
+            // copy the previous network data and apply a 1% mutation
+            // no cross breeding
+            child.network.copy(parent.network)
+            NeuralNetwork.mutate(child.network,0.1f)
+            children.add(child)
+        }
+
+        // then breed the top 3 balls
+        for(i in balls.size-3 until balls.size){
+            // pick a random parent
+            val parent=balls[i]
             // create a child from the parent
             val child=Ball(parent.originX + parent.getRadius(),
                 parent.originY + parent.getRadius(), parent.getRadius(),blocks,checkpoints)
@@ -163,18 +185,18 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
                     ball.score.add(check)
 
             }
-
+            ball.velocity.y*=ball.friction
+            ball.bounce*=ball.mass
         }
         if(timer.getTick()>=maxTime) {
             timer.reset()
             geneticsAlgorithm()
         }
 
-        balls.forEach { ball->
-            ball.velocity.y*=ball.friction
-            ball.bounce*=ball.mass
-        }
+
         timer.update(delta)
+
+        generationLabel?.getTextView()?.setText("Gen: $generation")
 
     }
 

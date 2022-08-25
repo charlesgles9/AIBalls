@@ -6,6 +6,7 @@ import com.graphics.glcanvas.engine.maths.ColorRGBA
 import com.graphics.glcanvas.engine.maths.Vector2f
 import com.graphics.glcanvas.engine.structures.Circle
 import com.graphics.glcanvas.engine.structures.RectF
+import com.graphics.glcanvas.engine.utils.FpsCounter
 import com.neural.aiballs.ai.NeuralNetwork
 import com.neural.aiballs.algebra.Collision
 import kotlin.math.*
@@ -25,12 +26,12 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
     val gravity=8f
     val momentum=17f
     var bounce=12f
-    val mass=0.92f
+    val mass=0.94f
     val friction=0.99f
     var angle=0.0f
     private val input= mutableListOf<Double>()
     //3-> raycasts to the nearest edges, 4 -> upper and lower direction distance, velocityX and Y
-    var network=NeuralNetwork(3+7,4,2)
+    var network=NeuralNetwork(5+7,4,2)
     val score= mutableListOf<RectF>()
     val passed= mutableListOf<RectF>()
     var hitFloor=false
@@ -45,7 +46,7 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
     init {
         direction.setColor(ColorRGBA.red)
         lower.setColor(ColorRGBA.cyan)
-        val angles= floatArrayOf(180f,60f,30f,90f,-90f,-60f,-30f)
+        val angles= floatArrayOf(180f,60f,90f,-90f,-60f)
         for ( angle in angles){
             val ray=Ray(getX(),getY(),getX(),getY())
                 ray.angle=angle
@@ -111,7 +112,7 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
         input.add(lower.getDistance())
         input.add(dx.toDouble())
         input.add(dy.toDouble())
-        input.add(rightWallHeight.toDouble()+getRadius())
+        input.add(rightWallHeight.toDouble())
         input.add(nearest.getX().toDouble())
         input.add(nearest.getY().toDouble())
         val output=network.predict(input)
@@ -136,21 +137,20 @@ class Ball(val originX: Float, val originY: Float, radius: Float,
             ray.project(far,getX(),getY())
         }
 
-         dx=(velocity.y)* cos(angle)
-         dy=((velocity.y)* sin(angle))
-         g=gravity
-         var vx=velocity.x
+         val frame= 70f/FpsCounter.getInstance().getFps().toFloat()
+         dx=(velocity.y)*frame* cos(angle)
+         dy=((velocity.y)*frame* sin(angle))
+         g=gravity*frame
+         var vx=velocity.x*frame
         for(block in blocks){
             //cast the rays to the nearest edges
-           if(abs(block.getX()-getX()) <300|| abs(block.getY()-getY())<300)
+           if(abs(block.getX()-getX()) <200|| abs(block.getY()-getY())<200)
             for (line in block.lines){
                 castRaysCollision(vision[0],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[1],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[2],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[3],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(vision[4],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
-                castRaysCollision(vision[5],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
-                castRaysCollision(vision[6],line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(direction,line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
                 castRaysCollision(lower,line.getStartX(),line.getStartY(),line.getStopX(),line.getStopY())
             }

@@ -98,7 +98,7 @@ public class Collision {
             closest.set(circle.getX(),circle.getY(),closestX,closestY);
             circle.setAngle((float)(Math.atan2(dy,dx)));
             closest.setColor(ColorRGBA.Companion.getRed());
-            float displacement=(1.0f)-distance/circle.getRadius();
+            float displacement=(1.0f+0.01f)-distance/circle.getRadius();
             circle.set(circle.getX()+(dx)*displacement,circle.getY()+(dy)*displacement);
             circle.getVelocity().set(circle.getVelocity().getX(),circle.getVelocity().getY());
 
