@@ -109,7 +109,7 @@ class NeuralNetwork (val inputCount:Int, val hiddenCount:Int,  val outputCount:I
         output.add(biasOutput)
         output.sigmoid()
 
-       /* for(i in 0 until values.size){
+        for(i in 0 until values.size){
             val color=inputLayer[i].getColor()
             color.set(ColorRGBA.green)
             inputLayer[i].setColor(ColorRGBA.darken(values[i].toFloat(),color ))
@@ -125,7 +125,7 @@ class NeuralNetwork (val inputCount:Int, val hiddenCount:Int,  val outputCount:I
             val color=outputLayer[i].getColor()
             color.set(ColorRGBA.red)
             outputLayer[i].setColor(ColorRGBA.darken(output.data[i][0].toFloat(),color ))
-        }*/
+        }
         return output.toArray()
     }
 
