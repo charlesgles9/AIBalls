@@ -117,11 +117,11 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
        /* checkpoints.forEach {
             batch.draw(it)
         }*/
-        balls[balls.size-1].draw(batch)
         batch.end()
 
         batch.begin(cameraUI)
         timerLayout.draw(batch)
+        balls[balls.size-1].network.draw(batch)
         batch.end()
 
 
@@ -201,7 +201,7 @@ class Renderer(private val context: Context,width:Float,height:Float):GLRenderer
 
         balls.sortBy { it.score.size }
         val best=balls[balls.size-1]
-            best.network.start.set(getCanvasWidth()*0.7f,getCanvasHeight()*0.7f)
+            best.network.start.set(getCanvasWidth()*0.68f,getCanvasHeight()*0.7f)
         best.network.initGraphics()
 
     }
